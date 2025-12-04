@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 
 const validatePassword = (password) => {
   
-  const strongPasswordRegex = /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
   return strongPasswordRegex.test(password);
 };
 
@@ -41,6 +41,45 @@ export const signup = async (req, res, next) => {
   try {
     await newUser.save();
     res.json('Signup successful');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const adminSignup = async (req, res, next) => {
+  const { username, email, password, adminKey } = req.body;
+
+  if (!username || !email || !password || !adminKey) {
+    return next(errorHandler(400, 'All fields are required'));
+  }
+
+  // Verify admin key
+  if (adminKey !== '123456@A') {
+    return next(errorHandler(403, 'Invalid admin key'));
+  }
+
+  if (!validateEmail(email)) {
+    return next(errorHandler(400, 'Not valid email address'));
+  }
+
+  if (!validatePassword(password)) {
+    return next(
+      errorHandler(400, 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character')
+    );
+  }
+
+  const hashedPassword = bcryptjs.hashSync(password, 10);
+
+  const newUser = new User({
+    username,
+    email,
+    password: hashedPassword,
+    isAdmin: true,
+  });
+
+  try {
+    await newUser.save();
+    res.json('Admin signup successful');
   } catch (error) {
     next(error);
   }

@@ -10,6 +10,7 @@ const fileSchema = new Schema({
     uuid: {type:String, required: true},
     fileSize:{Number} ,
     title: {type:String,required: true},
+    folder: {type:String, default: null},
     
     image:{
         type:String,

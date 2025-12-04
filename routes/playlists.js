@@ -12,8 +12,8 @@ router.get('/', async (req, res) => {
 
 // Create a new playlist
 router.post('/', async (req, res) => {
-  const { name } = req.body;
-  const newPlaylist = new Playlist({ name, videos: [] });
+  const { name, folder, description } = req.body;
+  const newPlaylist = new Playlist({ name, folder, description, videos: [] });
   await newPlaylist.save();
   res.json(newPlaylist);
 });
@@ -21,9 +21,9 @@ router.post('/', async (req, res) => {
 // Add video to a playlist
 router.post('/:id/videos', async (req, res) => {
   const { id } = req.params;
-  const { url } = req.body;
+  const { url, title, description } = req.body;
   const playlist = await Playlist.findById(id);
-  playlist.videos.push({ url });
+  playlist.videos.push({ url, title, description });
   await playlist.save();
   res.json(playlist);
 });
@@ -47,3 +47,26 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router; // Use export default to make it compatible with ESM
+
+
+// Delete folder (all playlists in folder)
+router.delete('/delete-folder/:folderName', async (req, res) => {
+  try {
+    const folderName = req.params.folderName;
+    const playlists = await Playlist.find({ folder: folderName });
+    
+    if (playlists.length === 0) {
+      return res.status(404).json({ error: 'Folder not found or empty' });
+    }
+
+    await Playlist.deleteMany({ folder: folderName });
+    
+    res.status(200).json({ 
+      message: 'Folder deleted successfully',
+      deletedCount: playlists.length 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error deleting folder' });
+  }
+});
